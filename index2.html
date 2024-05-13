@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Random Teams Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type=text] {
+            padding: 5px;
+            width: 200px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #teams {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Random Teams Generator</h1> <label for="participants">Nhập tên các thành viên (cách nhau bằng dấu phẩy):</label>
+    <input type="text" id="participants" placeholder="Ví dụ: Alice, Bob, Charlie, David"> <button
+        onclick="generateTeams()">Tạo đội</button>
+    <div id="teams"></div>
+    <div id="teams-history"></div>
+    <script>
+        const url = 'http://127.0.0.1:3003';
+        async function generateTeams() {
+            await showHistory();
+            const participantInput = document.getElementById('participants').value;
+            const participants = participantInput.split(',').map(name => name.trim());
+            const shuffledParticipants = shuffleArray(participants);
+            const teamSize = 2; let teams = [];
+            for (let i = 0; i < participants.length; i += teamSize) {
+                teams.push(shuffledParticipants.slice(i, i + teamSize));
+            }
+            postData(`${url}/teams`, {
+                createDate: new Date(),
+                data: teams,
+            }).then((data) => {
+                console.log(data)
+            })
+            displayTeams(teams);
+        }
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        function displayTeams(teams) {
+            const teamsContainer = document.getElementById('teams'); teamsContainer.innerHTML = '';
+            teams.forEach((team, index) => {
+                const teamElement = document.createElement('div');
+                teamElement.textContent = `Team ${index + 1}: ${team.join(', ')}`;
+                teamsContainer.appendChild(teamElement);
+            });
+        }
+        // Example POST method implementation:
+        async function postData(url = "", data = {}) {
+            // Default options are marked with *
+            const response = await fetch(url, {
+                method: "POST", // *GET, POST, PUT, DELETE, etc.
+                mode: "cors", // no-cors, *cors, same-origin
+                cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+                credentials: "same-origin", // include, *same-origin, omit
+                headers: {
+                    "Content-Type": "application/json",
+                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                redirect: "follow", // manual, *follow, error
+                referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+                body: JSON.stringify(data), // body data type must match "Content-Type" header
+            });
+            return response.json(); // parses JSON response into native JavaScript objects
+        }
+        async function showHistory(teams) {
+            const response = await fetch(`${url}/teams`);
+            const teamHistory = await response.json();
+            const teamsContainer = document.getElementById('teams-history'); teamsContainer.innerHTML = '';
+            teamHistory.forEach((team, index) => {
+                const teamElement = document.createElement('div');
+                teamElement.textContent = `History : ${new Date(team.createDate)}:`;
+                team.data.forEach((item, index) => {
+                teamElement.textContent += ` Team ${index + 1}: ${item.join(', ')} `;
+            });
+                teamsContainer.appendChild(teamElement);
+            });
+        }
+    </script>
+</body>
+
+</html>
